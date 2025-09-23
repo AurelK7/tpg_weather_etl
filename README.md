@@ -19,7 +19,7 @@ The pipeline expects **three families of inputs**. Please download them manually
 ### 1. GTFS (Timetables)
 - **Source**: [Swiss Open Transport Data – Timetable 2025 (GTFS)](https://data.opentransportdata.swiss/fr/dataset/timetable-2025-gtfs2020)  
 - **Content**: Complete timetables for the current year (last version GTFS_FP202x_202x-xx-xx.zip).  
-- **Where to place**:  ```data/gtfs/```
+- **Where to place**:  ```data/raw/gtfs/```
 
 ---
 
@@ -34,7 +34,7 @@ The pipeline expects **three families of inputs**. Please download them manually
 - **Version 2** (IstDaten v2, started 13 July 2025): [IstDaten v2](https://data.opentransportdata.swiss/dataset/ist-daten-v2)  
   → Not used here (still too recent, not enough history).  
 
-- **Where to place**: ``` data/istdaten```
+- **Where to place**: ``` data/raw/istdaten```
 
 ---
 
@@ -51,13 +51,13 @@ Steps:
 3. Select **Period = current year**  
 4. Download the CSV file(s): ``` ogd-smn_gve_t_recent.csv```.  
 
-- **Where to place**:  ``` data/weather```
+- **Where to place**:  ``` data/raw/weather```
 
 ---
 
 ### 📂 Final folder structure (after manual download)
 ```
-data/
+data/raw/
 ├─ gtfs/ # timetable ZIPs
 ├─ istdaten/ # monthly archives + daily CSVs (v1)
 └─ weather/ # MeteoSwiss CSVs for GVE
@@ -69,9 +69,9 @@ data/
 
 ```mermaid
 flowchart TD
-    A["GTFS ZIPs<br/>(data/gtfs)"] --> B["01_ingest_gtfs.py"]
-    A2["IstDaten CSVs/ZIPs<br/>(data/istdaten)"] --> C["02_ingest_istdaten.py"]
-    A3["Meteo GVE CSVs<br/>(data/meteo)"] --> D["03_ingest_meteo.py"]
+    A["GTFS ZIPs<br/>(data/raw/gtfs)"] --> B["01_ingest_gtfs.py"]
+    A2["IstDaten CSVs/ZIPs<br/>(data/raw/istdaten)"] --> C["02_ingest_istdaten.py"]
+    A3["Meteo GVE CSVs<br/>(data/raw/weather)"] --> D["03_ingest_meteo.py"]
 
     B --> E["DuckDB warehouse"]
     C --> E
@@ -95,9 +95,10 @@ tpg-meteo-etl/
 ├─ README.md
 ├─ requirements.txt
 ├─ data/
-│  ├─ gtfs/        # manual downloads
-│  ├─ istdaten/    # manual downloads (v1)
-│  ├─ weather/       # manual downloads
+│  ├─ raw/        # dataset downloaded
+│    ├─ gtfs/        # manual downloads
+│    ├─ istdaten/    # manual downloads (v1)
+│    ├─ weather/       # manual downloads
 │  ├─ silver/      # intermediate Parquet outputs
 │  └─ gold/        # final features parquet files
 ├─ app/
