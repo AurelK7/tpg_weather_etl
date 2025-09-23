@@ -51,7 +51,7 @@ Steps:
 3. Select **Period = current year**  
 4. Download the CSV file(s): ``` ogd-smn_gve_t_recent.csv```.  
 
-- **Where to place**:  ``` data/meteo```
+- **Where to place**:  ``` data/weather```
 
 ---
 
@@ -60,7 +60,7 @@ Steps:
 data/
 ├─ gtfs/ # timetable ZIPs
 ├─ istdaten/ # monthly archives + daily CSVs (v1)
-└─ meteo/ # MeteoSwiss CSVs for GVE
+└─ weather/ # MeteoSwiss CSVs for GVE
 ```
 
 ---
@@ -69,21 +69,21 @@ data/
 
 ```mermaid
 flowchart TD
-    A[GTFS ZIPs\n(data/gtfs)] --> B[01_ingest_gtfs.py]
-    A2[IstDaten CSVs/ZIPs\n(data/istdaten)] --> C[02_ingest_istdaten.py]
-    A3[Meteo GVE CSVs\n(data/meteo)] --> D[03_ingest_meteo.py]
+    A["GTFS ZIPs<br/>(data/gtfs)"] --> B["01_ingest_gtfs.py"]
+    A2["IstDaten CSVs/ZIPs<br/>(data/istdaten)"] --> C["02_ingest_istdaten.py"]
+    A3["Meteo GVE CSVs<br/>(data/meteo)"] --> D["03_ingest_meteo.py"]
 
-    B --> E[DuckDB warehouse]
+    B --> E["DuckDB warehouse"]
     C --> E
     D --> E
 
-    E --> F[10_build_features.py\n(events features)]
-    E --> G[11_build_features_by_stop_line.py\n(stop×line features)]
+    E --> F["10_build_features.py<br/>(events features)"]
+    E --> G["11_build_features_by_stop_line.py<br/>(stop×line features)"]
 
-    F --> H[data/gold/features_events.parquet]
-    G --> I[data/gold/features_by_stop_line.parquet]
+    F --> H["data/gold/features_events.parquet"]
+    G --> I["data/gold/features_by_stop_line.parquet"]
 
-    H --> J[Streamlit dashboards]
+    H --> J["Streamlit dashboards"]
     I --> J
  
 ```
@@ -97,7 +97,7 @@ tpg-meteo-etl/
 ├─ data/
 │  ├─ gtfs/        # manual downloads
 │  ├─ istdaten/    # manual downloads (v1)
-│  ├─ meteo/       # manual downloads
+│  ├─ weather/       # manual downloads
 │  ├─ silver/      # intermediate Parquet outputs
 │  └─ gold/        # final features parquet files
 ├─ app/
