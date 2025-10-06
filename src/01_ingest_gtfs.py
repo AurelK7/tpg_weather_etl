@@ -7,6 +7,13 @@ Ingest a GTFS snapshot (ZIP) into DuckDB + write silver Parquet extracts.
 - Writes silver Parquet directly from each process_* function
 - Upserts into DuckDB in a single transaction
 - Logging is configurable via CLI flags
+
+Usage
+-----
+python src/01_ingest_gtfs.py \
+--gtfs data/raw/gtfs/gtfs_fp2025_2025-09-22.zip --db data/warehouse.duckdb \
+--log-level INFO
+
 """
 
 import argparse
@@ -147,6 +154,8 @@ def process_routes(gtfs_zip: str | Path, feed_version: str, operator_pattern: st
 
     routes["feed_version"] = feed_version
     routes = routes[["route_id", "route_short_name", "route_long_name", "route_type", "operator_name", "feed_version"]]
+    # Cleanup duplicate
+    routes = routes.drop_duplicates()
 
     p = silver_dir / "gtfs_routes.parquet"
     routes.to_parquet(p, index=False)
@@ -168,6 +177,8 @@ def process_trips(gtfs_zip: str | Path, feed_version: str, routes_path: Path, si
 
     trips["feed_version"] = feed_version
     trips = trips[["trip_id", "route_id", "service_id", "direction_id", "trip_headsign", "feed_version"]]
+    # Cleanup duplicate
+    trips = trips.drop_duplicates()
 
     p = silver_dir / "gtfs_trips.parquet"
     trips.to_parquet(p, index=False)
@@ -188,6 +199,8 @@ def process_stop_times(gtfs_zip: str | Path, feed_version: str, trips_path: Path
     st = st.rename(columns={"arrival_time": "arrival_time_planned", "departure_time": "departure_time_planned"})
     st["feed_version"] = feed_version
     st = st[["trip_id", "stop_sequence", "stop_id", "arrival_time_planned", "departure_time_planned", "feed_version"]]
+    # Cleanup duplcate
+    st = st.drop_duplicates()
 
     p = silver_dir / "gtfs_stop_times.parquet"
     st.to_parquet(p, index=False)
@@ -210,6 +223,8 @@ def process_stops(gtfs_zip: str | Path, feed_version: str, stop_times_path: Path
     stops = stops.rename(columns={"stop_lat": "lat", "stop_lon": "lon"})
     stops["feed_version"] = feed_version
     stops = stops[["stop_id", "stop_name", "lat", "lon", "zone_id", "location_type", "parent_station", "platform_code", "feed_version"]]
+    # cleanup duplicate
+    stops = stops.drop_duplicates()
 
     p = silver_dir / "gtfs_stops.parquet"
     stops.to_parquet(p, index=False)
