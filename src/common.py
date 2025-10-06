@@ -1,6 +1,6 @@
 # common.py
-import os
 import argparse
+import os
 import textwrap
 from typing import Optional
 
@@ -21,9 +21,12 @@ log.info("Starting common module…")
 load_dotenv()
 
 DEFAULT_DB: str = os.environ.get("DUCKDB_PATH", "data/warehouse.duckdb")
-DUCKDB_THREADS: int = int(os.environ.get("DUCKDB_THREADS", "8"))
-DUCKDB_MEM: str = os.environ.get("DUCKDB_MEM", "8GB")  # e.g. "4GB", "0" for unlimited
+DUCKDB_THREADS: int = int(os.environ.get("DUCKDB_THREADS", "12"))
+DUCKDB_MEM: str = os.environ.get("DUCKDB_MEM", "16GB")  # e.g. "4GB", "0" for unlimited
+DUCKDB_CKPT: str = os.environ.get("DUCKDB_CHECKPOINT_THRESHOLD", "1GB")
+DUCKDB_ENABLE_PROGRESS: str = os.environ.get("DUCKDB_ENABLE_PROGRESS", "false")
 DUCKDB_TEMP_DIR: Optional[str] = os.environ.get("DUCKDB_TEMP_DIR")  # e.g. "/fast/tmp"
+
 
 # -----------------------------------------------------------------------------
 # Database connection
@@ -49,6 +52,7 @@ def get_db(conn_str: Optional[str] = None) -> duckdb.DuckDBPyConnection:
         log.debug(f"Applying PRAGMA threads={DUCKDB_THREADS}, memory_limit={DUCKDB_MEM}")
         con.execute(f"PRAGMA threads={DUCKDB_THREADS};")
         con.execute(f"PRAGMA memory_limit='{DUCKDB_MEM}';")
+        # log.debug(f"PRAGMA memory_limit='{DUCKDB_MEM}'")
 
         # Faster bulk appends: don't preserve insertion order
         try:
@@ -59,10 +63,16 @@ def get_db(conn_str: Optional[str] = None) -> duckdb.DuckDBPyConnection:
 
         # Make checkpoints less frequent during large transactions
         try:
-            con.execute("PRAGMA checkpoint_threshold='8GB';")  # adjust via env if you like
-            log.debug("PRAGMA checkpoint_threshold='8GB'")
+            con.execute(f"PRAGMA checkpoint_threshold='{DUCKDB_CKPT}';")  # adjust via env if you like
+            log.debug(f"PRAGMA checkpoint_threshold='{DUCKDB_CKPT}';")
         except Exception as e:
             log.debug(f"checkpoint_threshold not supported on this version: {e}")
+
+        try:
+            con.execute(f"PRAGMA enable_progress_bar={DUCKDB_ENABLE_PROGRESS};")
+            log.debug(f"Setting enable_progress_bar to: {str(DUCKDB_ENABLE_PROGRESS).lower()}")
+        except Exception as e:
+            log.debug(f"enable_progress_bar not supported on this version: {e}")
 
         if DUCKDB_TEMP_DIR:
             log.debug(f"Setting temp_directory to: {DUCKDB_TEMP_DIR}")
@@ -73,6 +83,7 @@ def get_db(conn_str: Optional[str] = None) -> duckdb.DuckDBPyConnection:
     except Exception as e:
         log.exception(f"Failed to connect to database at {path}: {e}")
         raise
+
 
 # -----------------------------------------------------------------------------
 # DDL schema
@@ -140,8 +151,8 @@ CREATE SEQUENCE IF NOT EXISTS ist_events_seq START 1;
 CREATE INDEX IF NOT EXISTS idx_ist_1 ON ist_events(service_date);
 CREATE INDEX IF NOT EXISTS idx_ist_2 ON ist_events(operator_abbr, product_id, line_text);
 
--- METEO
-CREATE TABLE IF NOT EXISTS meteo_obs (
+-- WEATHER
+CREATE TABLE IF NOT EXISTS weather_obs (
   station_id TEXT,
   ts_utc TIMESTAMP,
   temp_c DOUBLE,
@@ -179,6 +190,7 @@ CREATE TABLE IF NOT EXISTS feature_training_row (
 );
 CREATE SEQUENCE IF NOT EXISTS feature_training_row_seq START 1;
 """).strip()
+
 
 # -----------------------------------------------------------------------------
 # Analytical macros
@@ -242,6 +254,7 @@ def ensure_feature_macros(con: duckdb.DuckDBPyConnection) -> None:
     """)
     log.info("Macros available: delay_minutes, rain_bin, wind_bin, temp_bin.")
 
+
 # -----------------------------------------------------------------------------
 # Schema initialization
 # -----------------------------------------------------------------------------
@@ -266,6 +279,7 @@ def init_db(path: Optional[str] = None) -> None:
         log.exception(f"Schema initialization failed: {e}")
         raise
 
+
 # -----------------------------------------------------------------------------
 # CLI
 # -----------------------------------------------------------------------------
@@ -274,6 +288,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--init", action="store_true", help="Initialize DB schema (tables, indexes, macros).")
     ap.add_argument("--db", default=DEFAULT_DB, help=f"Path to DuckDB file (default: {DEFAULT_DB})")
     return ap
+
 
 if __name__ == "__main__":
     args = _build_arg_parser().parse_args()
