@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# src/10_build_features.pyt
 """
 10_build_features.py — Event-level features (IstDaten × Weather), memory-safe & station-aware
 

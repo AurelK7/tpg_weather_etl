@@ -15,7 +15,7 @@ Highlights
 
 Usage
 -----
-python src/03_ingest_weather_v.py --csv data/raw/weather/ogd-smn_gve_t_recent.csv --db data/warehouse.duckdb
+python src/03_ingest_weather.py --csv data/raw/weather/ogd-smn_gve_t_recent.csv --db data/warehouse.duckdb
 """
 
 from __future__ import annotations
