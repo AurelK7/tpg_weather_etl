@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # src/02_ingest_istdaten_v1.py
 """
 Ingest IstDaten (CSV + ZIP of CSV) WITHOUT extracting ZIPs to disk.

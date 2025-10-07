@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # src/01_ingest_gtfs.py
 """
 Ingest a GTFS snapshot (ZIP) into DuckDB + write silver Parquet extracts.

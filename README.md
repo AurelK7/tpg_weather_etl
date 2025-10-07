@@ -122,27 +122,67 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 ```
+#### 1.1 Configure environment variables
+Create a file `.env` at the project root with the following content (adjust paths if needed):
+```bash
+# DuckDB
+DUCKDB_PATH=data/warehouse.duckdb
+DUCKDB_THREADS=8
+DUCKDB_MEM=8GB
+DUCKDB_CHECKPOINT_THRESHOLD=1GB
+DUCKDB_ENABLE_PROGRESS=true
+
+# Logging
+LOG_LEVEL=INFO
+
+```
 ### 2 Initialize warehouse tables
 ```bash
 python src/common.py --init
 ```
-### 2 Ingest data
+### 3 Ingest raw data
+#### 3.1 GTFS (timetables)
 ```bash
-python src/01_ingest_gtfs.py --gtfs data/raw/gtfs/gtfs_fp2025_2025-09-08.zip
-python src/02_ingest_istdaten.py --glob "data/raw/istdaten/ist-daten*.zip" "data/raw/istdaten/*_istdaten.csv"
-python src/03_ingest_meteo.py --csv "data/meteo/ogd-smn_gve_t_recent.csv"
-
+python src/01_ingest_gtfs.py \
+  --gtfs data/raw/gtfs/gtfs_fp2025_2025-09-22.zip \
+  --db data/warehouse.duckdb \
+  --log-level INFO
+```
+#### 3.2 IstDaten (Realized trips)
+```bash
+python src/02_ingest_istdaten_v1.py \
+  --glob "data/raw/istdaten/*.zip" "data/raw/istdaten/*_istdaten.csv" \
+  --db data/warehouse.duckdb \
+  --workers 8 --log-level INFO
+```
+#### 3.3 Weather (MeteoSwiss GVE station)
+```bash
+python src/03_ingest_weather.py \
+  --csv data/raw/weather/ogd-smn_gve_t_recent.csv \
+  --db data/warehouse.duckdb \
+  --log-level INFO
 ```
 
-### 3 build features
+### 4 Build features
+#### 4.1 Event-level features
 ```bash
-python src/10_build_features.py --asof_window_min 10
-python src/11_build_features_by_stop_line.py --bin 15
-
+python src/10_build_features.py --db data/warehouse.duckdb --log-level INFO
 ```
-### 4 run dashboards
+#### 4.2 Aggregated by stop × line (10-min bins)
+```bash
+python src/11_build_features_by_stop_line.py --db data/warehouse.duckdb --log-level INFO
+```
+#### 4.3 Training-ready dataset (rolling medians & weather lags)
+Optional
+```bash
+python src/12_build_feature_training_row.py \
+  --db data/warehouse.duckdb \
+  --station-id GVE \
+  --write-table --replace-table
+```
+### 5 run dashboards
 ```bash
 streamlit run app/streamlit_app.py
-streamlit run app/streamlit_by_stop_line.py
 
+streamlit run app/streamlit_by_stop_line.py
 ```
